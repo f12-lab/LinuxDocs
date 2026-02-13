@@ -1,0 +1,50 @@
+extends: default
+
+cover:
+  front:
+    image: image:portada/cover.pdf[page=1]
+
+page:
+  size: A4
+  margin: [0.5in, 0.8in, 1in, 0.8in]
+
+font:
+  catalog:
+    merge: true
+    NotoSerif:
+      normal: NotoSerif-BoldItalic.ttf
+      bold: NotoSerif-BoldItalic.ttf
+      italic: NotoSerif-BoldItalic.ttf
+      bold_italic: NotoSerif-BoldItalic.ttf
+  base:
+    family: NotoSerif
+    size: 12
+  fallbacks: [NotoSerif]
+
+header:
+  height: 0.7in
+  line_height: 1.2
+  recto:
+    right:
+      content: 'Iniciativa Linux'
+  verso:
+    right:
+      content: 'Iniciativa Linux'
+
+footer:
+  height: 0.7in
+  line_height: 1.2
+  recto:
+    left:
+      content: ''
+    right:
+      content: ''
+    center:
+      content: '{page-number}'
+  verso:
+    left:
+      content: ''
+    right:
+      content: ''
+    center:
+      content: '{page-number}'
