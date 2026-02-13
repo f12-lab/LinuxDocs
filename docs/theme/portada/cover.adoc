@@ -1,0 +1,10 @@
+= Linux Guía Definitiva
+:page-numbering: false
+
+image::tux.png[Linux,550,550,align=center]
+
+[.text-center]
+_Manual práctico para usuarios y administradores de sistemas_
+
+[.text-center]
+*Autor:* Manuel Luis Quero Prados
