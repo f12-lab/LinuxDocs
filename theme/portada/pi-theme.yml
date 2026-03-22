@@ -1,0 +1,25 @@
+extends: default
+
+page:
+  size: A4
+  margin: [0.5in, 0.8in, 1in, 0.8in]
+
+footer:
+  height: 0.7in
+  line_height: 0
+  border_color: transparent
+  border_width: 0
+  recto:
+    left:
+      content: ''
+    right:
+      content: ''
+    center:
+      content: ''
+  verso:
+    left:
+      content: ''
+    right:
+      content: ''
+    center:
+      content: ''
