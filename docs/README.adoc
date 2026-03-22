@@ -1099,9 +1099,7 @@ $ uptime
 
 Estas herramientas permiten identificar procesos problemáticos, consumo excesivo de recursos y el estado general del sistema.
 
-=== Copias de seguridad (En revisión !!)
-
-// Explicar teoria de los modelos de copias que hay, tambien las task y quotas
+=== Copias de seguridad
 
 Realizar copias de seguridad periódicas es una de las prácticas más importantes para cualquier sistema, independientemente del sistema operativo.
 
@@ -1125,71 +1123,350 @@ Evita hacer copias completas del sistema sin un motivo claro, ya que suelen ser 
 
 <<<
 
-==== Estrategia básica de backups
+==== Tipos de copias de seguridad
 
-Una estrategia sencilla y efectiva puede ser:
+Existen tres tipos principales de backups: completo, diferencial e incremental.
+Cada uno presenta ventajas y desventajas en términos de velocidad, espacio y recuperación.
 
-* Copias regulares (diarias o semanales)
-* Almacenamiento externo (USB, disco externo, NAS)
-* Mantener más de una versión de los archivos
-* No guardar la copia en el mismo disco que los datos originales
+===== Backup completo
 
-==== Backups con rsync
+Un *backup completo* consiste en copiar todos los datos del sistema en cada ejecución.
 
-`rsync` es una de las herramientas más utilizadas en Linux para realizar copias de seguridad incrementales.
+image::assets/backups/completo.png[alt=completo-backup,width=450,align=center]
 
-Ejemplo básico para respaldar el directorio personal:
+Ventajas:
+
+* Recuperación rápida y sencilla
+* Contiene toda la información en una sola copia
+* Mayor fiabilidad
+
+Desventajas:
+
+* Requiere mucho tiempo
+* Alto consumo de almacenamiento
+* Mayor carga en el sistema
+
+Uso recomendado:
+
+* Primera copia de seguridad (backup inicial)
+* Sistemas pequeños o con pocos cambios
+* Entornos donde la rapidez de restauración es crítica
+
+<<<
+
+===== Backup diferencial
+
+Un *backup diferencial* guarda los cambios realizados desde el último backup completo.
+
+image::assets/backups/diferencial.png[alt=diferencial-backup,width=550,align=center]
+
+Ventajas:
+
+* Más rápido que el backup completo
+* Menor uso de almacenamiento
+* Recuperación relativamente rápida
+
+Desventajas:
+
+* Crece con el tiempo
+* Más lento de restaurar que un backup completo
+* Mayor consumo que el incremental
+
+Para restaurar, se necesita:
+
+* El backup completo
+* El último backup diferencial
+
+Uso recomendado:
+
+* Entornos donde se busca un equilibrio entre velocidad y almacenamiento
+* Sistemas donde la restauración debe ser sencilla pero no inmediata
+
+<<<
+
+===== Backup incremental
+
+Un *backup incremental* guarda únicamente los cambios desde el último backup realizado (ya sea completo o incremental).
+
+image::assets/backups/incremental.png[alt=incremtal-backup,width=550,align=center]
+
+Ventajas:
+
+* Muy rápido
+* Bajo consumo de almacenamiento
+* Menor impacto en el sistema
+
+Desventajas:
+
+* Restauración más lenta
+* Dependencia de toda la cadena de backups
+* Mayor riesgo si un archivo se corrompe
+
+Para restaurar, se necesita:
+
+* El backup completo
+* Todos los incrementos posteriores
+
+Uso recomendado:
+
+* Sistemas con muchos cambios frecuentes
+* Entornos donde el almacenamiento es limitado
+* Estrategias de backup automatizadas (diarias o incluso horarias)
+
+<<<
+
+==== rsync: opciones principales y uso avanzado
+
+`rsync` es una herramienta extremadamente potente y versátil para copias de seguridad y sincronización de archivos en Linux.
+
+Su principal ventaja es que **solo transfiere los cambios**, lo que reduce el tiempo, el uso de red y el almacenamiento necesario.
+
+===== Sintaxis básica
 
 [source,bash]
 ----
-$ rsync -avh --delete /home/usuario/ /ruta/al/backup/home/
+rsync [opciones] origen destino
 ----
 
-Opciones utilizadas:
-
-* `-a`: modo archivo (permisos, enlaces, fechas)
-* `-v`: salida detallada
-* `-h`: tamaños legibles
-* `--delete`: elimina archivos del destino que ya no existen en el origen
-
-==== Automatizar copias con cron
-
-Para automatizar los backups, podemos usar `cron`.
-
-Editar el cron del usuario:
+Un detalle importante es la barra final (`/`):
 
 [source,bash]
 ----
-$ crontab -e
+# Copia el directorio dentro del destino
+rsync -av /origen /destino/
+
+# Copia solo el contenido del directorio
+rsync -av /origen/ /destino/
 ----
 
-Ejemplo de copia diaria a las 02:00:
+===== Opciones más utilizadas
+
+Estas son las opciones que usarás en la mayoría de casos:
+
+* `-a` -> modo archivo (recursivo, mantiene permisos, fechas, etc.)
+* `-v` -> muestra información detallada
+* `-h` -> formato legible (MB, GB…)
+* `-z` -> comprime datos (útil en red)
+* `-P` -> muestra progreso y permite reanudar
+* `--delete` -> elimina en destino lo que ya no existe en origen
+* `--dry-run` -> simulación (no realiza cambios)
+* `--exclude` -> excluye archivos o directorios
+* `--link-dest` -> base para backups incrementales
+
+<<<
+
+==== Estrategias de backup con rsync
+
+Aunque `rsync` ya trabaja de forma eficiente copiando solo los cambios, es importante entender cómo aplicar distintas estrategias de backup: completo, diferencial e incremental.
+
+===== Backup completo
+
+Un backup completo copia todos los datos del origen al destino.
 
 [source,bash]
 ----
-0 2 * * * rsync -avh /home/usuario/ /ruta/al/backup/home/
+rsync -a /ruta/origen/ /ruta/destino/
+----
+
+Pero como ya hemos visto, consume más tiempo y espacio.
+
+===== Backup diferencial
+
+Este método mantiene el destino idéntico al origen, eliminando lo que ya no existe.
+
+[source,bash]
+----
+rsync -a --delete /ruta/origen/ /ruta/destino/
+----
+
+Ventajas:
+
+* Siempre tienes una copia exacta
+* Fácil de entender y restaurar
+
+Desventajas:
+
+* No mantiene histórico
+* Un error en el origen se replica en el destino
+
+===== Backup incremental (snapshots)
+
+Permite guardar versiones en el tiempo sin duplicar datos usando `--link-dest`.
+
+[source,bash]
+----
+rsync -a --link-dest=/backup/current \
+/origen/ /backup/snapshot-fecha/
+----
+
+Características:
+
+* Cada copia parece completa
+* Solo ocupa espacio lo que cambia
+* Permite recuperar versiones antiguas
+
+Es la estrategia más potente y recomendada.
+
+<<<
+
+==== Automatización con cron
+
+`cron` es un sistema que permite ejecutar tareas automáticamente en intervalos de tiempo definidos.
+
+Para editar las tareas programadas de un usuario:
+
+[source,bash]
+----
+crontab -e
+----
+
+===== Formato de cron
+
+Cada línea en `crontab` tiene la siguiente estructura:
+
+image:assets/backups/cron.jpg[alt=incremtal-backup,width=550,align=center]
+
+===== Ejemplos útiles
+
+Backup cada día a las 3:30:
+
+[source,bash]
+----
+30 3 * * * script.sh
+----
+
+Cada domingo a las 2:00:
+
+[source,bash]
+----
+0 2 * * 0 script.sh
+----
+
+Cada 15 minutos:
+
+[source,bash]
+----
+*/15 * * * * script.sh
 ----
 
 <<<
 
-==== Timeshift
-
-Timeshift es una herramienta orientada a copias del sistema, muy útil para recuperar el sistema tras una actualización fallida.
-
-Está pensada principalmente para:
-
-* Archivos del sistema
-* Configuraciones
-* Restauración rápida
-
-Instalación:
+===== Script básico de backup
 
 [source,bash]
 ----
-$ sudo pacman -S timeshift
+#!/bin/bash
+
+SOURCE="/home"
+DEST="/backup/home"
+LOG="/var/log/backup.log"
+
+rsync -av --delete "$SOURCE/" "$DEST/" >> "$LOG" 2>&1
 ----
 
-Timeshift **no sustituye** a las copias del directorio `/home`, sino que las complementa.
+Dar permisos de ejecución:
+
+[source,bash]
+----
+chmod +x script-backup.sh
+----
+
+==== rsync sobre SSH
+
+Una de las características más potentes de `rsync` es su capacidad para trabajar sobre SSH, permitiendo hacer copias remotas de forma segura.
+
+Esto es clave para:
+
+* Backups en otro servidor
+* Copias en NAS
+* Cumplir la regla 3-2-1 (copia externa)
+
+Ejemplo enviando datos a un servidor remoto:
+
+[source,bash]
+----
+rsync -avz /datos/ usuario@servidor:/backup/datos/
+----
+
+Recibiendo datos desde remoto:
+
+[source,bash]
+----
+rsync -avz usuario@servidor:/datos/ /backup/datos/
+----
+
+===== Opciones avanzadas con SSH
+
+Podemos personalizar la conexión SSH:
+
+[source,bash]
+----
+rsync -avz -e "ssh -p 2222" /datos/ usuario@servidor:/backup/
+----
+
+Limitar el uso de red:
+
+[source,bash]
+----
+rsync -avz --bwlimit=5000 /datos/ usuario@servidor:/backup/
+----
+
+<<<
+
+==== Restauración de backups
+
+Para finalizar, es importante conocer la forma de restauración de backups.
+Es fundamental entender el proceso según el tipo de copia utilizada.
+
+===== Restaurar desde backup completo o diferencial
+
+En un backup completo o diferencial, la restauración es directa, ya que contiene todos los datos.
+
+[source,bash]
+----
+rsync -av /backup/ /ruta/original/
+----
+
+Este método sobrescribirá los datos actuales con los del backup.
+
+===== Restaurar archivo específico
+
+Si solo necesitamos recuperar un archivo o carpeta concreta, podemos hacerlo sin restaurar todo el sistema.
+
+[source,bash]
+----
+rsync -av /backup/ruta/archivo.txt /ruta/original/
+----
+
+Esto es especialmente útil para recuperar archivos eliminados o versiones anteriores.
+
+===== Restaurar desde backups incrementales (snapshots)
+
+En sistemas con backups incrementales organizados por snapshots, cada copia representa un estado del sistema en un momento concreto.
+
+Primero, localizamos el snapshot deseado:
+
+----
+snapshot-2026-03-20/
+snapshot-2026-03-21/
+snapshot-2026-03-22/
+----
+
+Una vez identificado, podemos restaurar archivos o todo el sistema desde ese punto:
+
+[source,bash]
+----
+rsync -av /backup/snapshot-2026-03-22/ /ruta/original/
+----
+
+Ventaja:
+
+* Permite volver a estados anteriores del sistema
+
+Importante:
+
+* Aunque cada snapshot parece completo, internamente depende de enlaces (hard links)
+* No se debe modificar manualmente el contenido de los backups
 
 <<<
 
