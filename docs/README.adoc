@@ -1375,11 +1375,10 @@ chmod +x script-backup.sh
 
 Una de las características más potentes de `rsync` es su capacidad para trabajar sobre SSH, permitiendo hacer copias remotas de forma segura.
 
-Esto es clave para:
+Esto es muy útil para:
 
 * Backups en otro servidor
 * Copias en NAS
-* Cumplir la regla 3-2-1 (copia externa)
 
 Ejemplo enviando datos a un servidor remoto:
 
